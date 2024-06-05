@@ -31,7 +31,7 @@ dat_mem dm1(.clk, .write_en, .raddr, .waddr,
 
 // instantiate the LFSR core
 // need one for Lab 4; may want 6 for Lab 5
-lfsr6 l6(.clk, .en(LFSR_en), .init,
+lfsr6 l6(.clk, .en(LFSR_en), .init(load_LFSR),
          .taps, .start, .state(LFSR));
 
 logic[7:0] ct;                  // your program counter
@@ -92,6 +92,16 @@ always_comb begin
 		   waddr      =	'd64;
          end       
 	default: begin
+        LFSR_en = 'b1;
+        write_en = 'b1;
+        if (ct < pre_len + 7) begin 
+            raddr = 'd0;
+            data_in = data_out ^ {2'b0, LFSR};
+        end else begin 
+            raddr = ct - 7 - pre_len + 1;
+            data_in = data_out ^ LFSR;
+        end
+        waddr = 'd64 + ct - 7;
 /* What happens next?
    1)  for pre_len cycles, bitwise XOR ASCII _ = 0x5f with current
      LFSR state; prepend LFSR state with 2'b00 to pad to 8 bits
@@ -128,6 +138,6 @@ always @(posedge clk)
    This may be more or fewer clock cycles than mine. 
    Test bench waits for a done flag, so generate one at some time.
 */
-assign done = &ct[5:0];
+assign done = ct == 64 + 8;
 
 endmodule
